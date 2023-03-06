@@ -290,10 +290,27 @@ fn rotate_face(rc: &mut RubiksCube, face: Face, movement: Movement, depth: usize
     }
 }
 
+fn checkerboard(rc: &mut RubiksCube, print_each_step: bool) {
+    // dbg!(rc.size / 2);
+    for face in [Face::Right, Face::Up, Face::Front] {
+        for depth in (1..((rc.size + 1) / 2)).step_by(2) {
+            // dbg!(depth, rc.size - depth - 1);
+            rotate_face(rc, face, Movement::Clockwise, depth);
+            rotate_face(rc, face, Movement::Clockwise, depth);
+            if depth != rc.size - depth - 1 {
+                rotate_face(rc, face, Movement::Clockwise, rc.size - depth - 1);
+                rotate_face(rc, face, Movement::Clockwise, rc.size - depth - 1);
+            }
+        }
+        if print_each_step {
+            println!("{}", rc);
+            std::io::stdin().read_line(&mut String::new()).unwrap();
+        }
+    }
+}
+
 fn main() {
     // let mut rc = RubiksCube::new(5);
-
-    // // println!("{rc:?}");
 
     // rc.faces[Face::Front as usize][0][0] = Color::Yellow;
     // rc.faces[Face::Front as usize][0][1] = Color::Orange;
@@ -304,13 +321,13 @@ fn main() {
     // rc.faces[Face::Front as usize][3][1] = Color::Yellow;
     // rc.faces[Face::Front as usize][3][2] = Color::Orange;
 
-    // println!("{rc:?}");
+    // println!("{rc}");
 
     // for _ in 0..8 {
     //     rotate_face(&mut rc, Face::Front, Movement::Clockwise, 0);
     //     std::io::stdin().read_line(&mut String::new()).unwrap();
 
-    //     println!("{rc:?}");
+    //     println!("{rc}");
     // }
 
     // let mut rc = RubiksCube::new(3);
@@ -333,17 +350,84 @@ fn main() {
     //     println!("{rc:?}");
     // }
 
-    let mut rc = RubiksCube::new(3);
+    // let mut rc = RubiksCube::new(3);
 
+    // println!("{rc}");
+
+    // let mut rng = rand::thread_rng();
+    // for _ in 0..20 {
+    //     let face = num_traits::FromPrimitive::from_u32(rng.gen_range(0..6)).unwrap();
+    //     rotate_face(&mut rc, face, Movement::Clockwise, 0);
+    //     std::io::stdin().read_line(&mut String::new()).unwrap();
+
+    //     println!("Moving face {face:?}");
+    //     println!("{rc}");
+    // }
+
+    // let mut rc = RubiksCube::new(5);
+
+    // // checkerboard pattern through rotations, printing on each rotation
+
+    // println!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+    // rotate_face(&mut rc, Face::Left, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Left, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Right, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Right, Movement::Clockwise, 1);
+    // println!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+    // rotate_face(&mut rc, Face::Front, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Front, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Back, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Back, Movement::Clockwise, 1);
+    // println!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+    // rotate_face(&mut rc, Face::Up, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Up, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Down, Movement::Clockwise, 1);
+    // rotate_face(&mut rc, Face::Down, Movement::Clockwise, 1);
+    // println!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+
+    // let mut rc = RubiksCube::new(3);
+
+    // println!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+
+    // for _ in 0..4 {
+    //     rotate_face(&mut rc, Face::Right, Movement::Clockwise, 1);
+    //     rotate_face(&mut rc, Face::Up, Movement::Clockwise, 0)
+    // }
+    // print!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+
+    // for _ in 0..4 {
+    //     rotate_face(&mut rc, Face::Down, Movement::Clockwise, 1);
+    //     rotate_face(&mut rc, Face::Front, Movement::Clockwise, 0)
+    // }
+    // print!("{rc}");
+    // std::io::stdin().read_line(&mut String::new()).unwrap();
+
+    // for _ in 0..4 {
+    //     rotate_face(&mut rc, Face::Back, Movement::Clockwise, 1);
+    //     rotate_face(&mut rc, Face::Left, Movement::Clockwise, 0)
+    // }
+
+    // print!("{rc}");
+
+    let mut rc = RubiksCube::new(5);
+    checkerboard(&mut rc, false);
     println!("{rc}");
 
-    let mut rng = rand::thread_rng();
-    for _ in 0..20 {
-        let face = num_traits::FromPrimitive::from_u32(rng.gen_range(0..6)).unwrap();
-        rotate_face(&mut rc, face, Movement::Clockwise, 0);
-        std::io::stdin().read_line(&mut String::new()).unwrap();
+    let mut rc = RubiksCube::new(3);
+    checkerboard(&mut rc, false);
+    println!("{rc}");
 
-        println!("Moving face {face:?}");
-        println!("{rc}");
-    }
+    let mut rc = RubiksCube::new(6);
+    checkerboard(&mut rc, false);
+    println!("{rc}");
+
+    let mut rc = RubiksCube::new(7);
+    checkerboard(&mut rc, false);
+    println!("{rc}");
 }
