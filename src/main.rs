@@ -244,9 +244,18 @@ fn position_based_off_corner_and_move_count(
 }
 
 macro_rules! cycle {
-    ($a:expr, $( $x: expr),+) => {
-        ($a, $($x),+) = ($($x),+, $a);
-    }
+    ($a:expr, $b:expr) => {{
+        let temp = $a;
+        $a = $b;
+        $b = temp;
+    }};
+    ($a:expr, $b:expr, $c:expr, $d:expr) => {{
+        let temp = $a;
+        $a = $b;
+        $b = $c;
+        $c = $d;
+        $d = temp;
+    }};
 }
 
 fn rotate_face(rc: &mut RubiksCube, face: Face, movement: Movement, depth: usize) {
