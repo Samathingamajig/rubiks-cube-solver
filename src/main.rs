@@ -243,6 +243,12 @@ fn position_based_off_corner_and_move_count(
     }
 }
 
+macro_rules! cycle {
+    ($a:expr, $( $x: expr),+) => {
+        ($a, $($x),+) = ($($x),+, $a);
+    }
+}
+
 fn rotate_face(rc: &mut RubiksCube, face: Face, movement: Movement, depth: usize) {
     if depth == 0 {
         let main_face = &mut rc.faces[face as usize];
@@ -251,16 +257,35 @@ fn rotate_face(rc: &mut RubiksCube, face: Face, movement: Movement, depth: usize
             Movement::Clockwise => {
                 for o in 0..(rc.size / 2) {
                     for i in o..(s - o) {
-                        let temp = main_face[o][i];
-                        main_face[o][i] = main_face[s - i][o];
-                        main_face[s - i][o] = main_face[s - o][s - i];
-                        main_face[s - o][s - i] = main_face[i][s - o];
-                        main_face[i][s - o] = temp;
+                        cycle!(
+                            main_face[o][i],
+                            main_face[s - i][o],
+                            main_face[s - o][s - i],
+                            main_face[i][s - o]
+                        );
                     }
                 }
             }
-            Movement::CounterClockwise => todo!(),
-            Movement::Half => todo!(),
+            Movement::CounterClockwise => {
+                for o in 0..(rc.size / 2) {
+                    for i in o..(s - o) {
+                        cycle!(
+                            main_face[o][i],
+                            main_face[i][s - o],
+                            main_face[s - o][s - i],
+                            main_face[s - i][o]
+                        );
+                    }
+                }
+            }
+            Movement::Half => {
+                for o in 0..(rc.size / 2) {
+                    for i in o..(s - o) {
+                        cycle!(main_face[o][i], main_face[s - o][s - i]);
+                        cycle!(main_face[s - i][o], main_face[i][s - o]);
+                    }
+                }
+            }
         };
     }
 
@@ -275,18 +300,50 @@ fn rotate_face(rc: &mut RubiksCube, face: Face, movement: Movement, depth: usize
                     position_based_off_corner_and_move_count(sides[3].1, i, rc.size, depth),
                 ];
 
-                let temp = rc.faces[sides[0].0 as usize][positions[0].0][positions[0].1];
-                rc.faces[sides[0].0 as usize][positions[0].0][positions[0].1] =
-                    rc.faces[sides[3].0 as usize][positions[3].0][positions[3].1];
-                rc.faces[sides[3].0 as usize][positions[3].0][positions[3].1] =
-                    rc.faces[sides[2].0 as usize][positions[2].0][positions[2].1];
-                rc.faces[sides[2].0 as usize][positions[2].0][positions[2].1] =
-                    rc.faces[sides[1].0 as usize][positions[1].0][positions[1].1];
-                rc.faces[sides[1].0 as usize][positions[1].0][positions[1].1] = temp;
+                cycle!(
+                    rc.faces[sides[0].0 as usize][positions[0].0][positions[0].1],
+                    rc.faces[sides[3].0 as usize][positions[3].0][positions[3].1],
+                    rc.faces[sides[2].0 as usize][positions[2].0][positions[2].1],
+                    rc.faces[sides[1].0 as usize][positions[1].0][positions[1].1]
+                );
             }
         }
-        Movement::CounterClockwise => todo!(),
-        Movement::Half => todo!(),
+        Movement::CounterClockwise => {
+            for i in 0..rc.size {
+                let positions = [
+                    position_based_off_corner_and_move_count(sides[0].1, i, rc.size, depth),
+                    position_based_off_corner_and_move_count(sides[1].1, i, rc.size, depth),
+                    position_based_off_corner_and_move_count(sides[2].1, i, rc.size, depth),
+                    position_based_off_corner_and_move_count(sides[3].1, i, rc.size, depth),
+                ];
+
+                cycle!(
+                    rc.faces[sides[0].0 as usize][positions[0].0][positions[0].1],
+                    rc.faces[sides[1].0 as usize][positions[1].0][positions[1].1],
+                    rc.faces[sides[2].0 as usize][positions[2].0][positions[2].1],
+                    rc.faces[sides[3].0 as usize][positions[3].0][positions[3].1]
+                );
+            }
+        }
+        Movement::Half => {
+            for i in 0..rc.size {
+                let positions = [
+                    position_based_off_corner_and_move_count(sides[0].1, i, rc.size, depth),
+                    position_based_off_corner_and_move_count(sides[1].1, i, rc.size, depth),
+                    position_based_off_corner_and_move_count(sides[2].1, i, rc.size, depth),
+                    position_based_off_corner_and_move_count(sides[3].1, i, rc.size, depth),
+                ];
+
+                cycle!(
+                    rc.faces[sides[0].0 as usize][positions[0].0][positions[0].1],
+                    rc.faces[sides[2].0 as usize][positions[2].0][positions[2].1]
+                );
+                cycle!(
+                    rc.faces[sides[1].0 as usize][positions[1].0][positions[1].1],
+                    rc.faces[sides[3].0 as usize][positions[3].0][positions[3].1]
+                );
+            }
+        }
     }
 }
 
@@ -295,11 +352,9 @@ fn checkerboard(rc: &mut RubiksCube, print_each_step: bool) {
     for face in [Face::Right, Face::Up, Face::Front] {
         for depth in (1..((rc.size + 1) / 2)).step_by(2) {
             // dbg!(depth, rc.size - depth - 1);
-            rotate_face(rc, face, Movement::Clockwise, depth);
-            rotate_face(rc, face, Movement::Clockwise, depth);
+            rotate_face(rc, face, Movement::Half, depth);
             if depth != rc.size - depth - 1 {
-                rotate_face(rc, face, Movement::Clockwise, rc.size - depth - 1);
-                rotate_face(rc, face, Movement::Clockwise, rc.size - depth - 1);
+                rotate_face(rc, face, Movement::Half, rc.size - depth - 1);
             }
         }
         if print_each_step {
@@ -323,8 +378,8 @@ fn main() {
 
     // println!("{rc}");
 
-    // for _ in 0..8 {
-    //     rotate_face(&mut rc, Face::Front, Movement::Clockwise, 0);
+    // loop {
+    //     rotate_face(&mut rc, Face::Front, Movement::Half, 0);
     //     std::io::stdin().read_line(&mut String::new()).unwrap();
 
     //     println!("{rc}");
