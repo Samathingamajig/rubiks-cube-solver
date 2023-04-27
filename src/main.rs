@@ -1,6 +1,6 @@
-use rand::prelude::*;
 use std::fmt::{Debug, Display, Formatter};
 
+#[derive(Debug, PartialEq)]
 struct RubiksCube {
     size: usize,
     faces: [Vec<Vec<Color>>; 6],
@@ -19,46 +19,6 @@ impl RubiksCube {
                 vec![vec![Color::White; size]; size],
             ],
         }
-    }
-}
-
-impl Debug for RubiksCube {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
-        fn output_single_row(fmt: &mut Formatter<'_>, row: &Vec<Color>) -> std::fmt::Result {
-            for c in row {
-                write!(fmt, "{c:?}")?
-            }
-            Ok(())
-        }
-
-        let leading_spaces = " ".repeat(self.faces[0].len());
-
-        for row in &self.faces[0][..] {
-            write!(fmt, "{leading_spaces}")?;
-            output_single_row(fmt, row)?;
-            writeln!(fmt)?;
-        }
-
-        for (((left, front), right), back) in self.faces[1][..]
-            .iter()
-            .zip(&self.faces[2][..])
-            .zip(&self.faces[3][..])
-            .zip(&self.faces[4][..])
-        {
-            output_single_row(fmt, left)?;
-            output_single_row(fmt, front)?;
-            output_single_row(fmt, right)?;
-            output_single_row(fmt, back)?;
-            writeln!(fmt)?;
-        }
-
-        for row in &self.faces[5][..] {
-            write!(fmt, "{leading_spaces}")?;
-            output_single_row(fmt, row)?;
-            writeln!(fmt)?;
-        }
-
-        Ok(())
     }
 }
 
@@ -102,7 +62,7 @@ impl Display for RubiksCube {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Color {
     White,
     Yellow,
@@ -130,7 +90,7 @@ enum Corner {
     BottomRight,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum Movement {
     Clockwise,
     CounterClockwise,
@@ -139,23 +99,6 @@ enum Movement {
 
 #[derive(Clone, Copy)]
 struct Side(Face, Corner);
-
-impl Debug for Color {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            fmt,
-            "{}",
-            match self {
-                Color::White => "W",
-                Color::Yellow => "Y",
-                Color::Red => "R",
-                Color::Orange => "O",
-                Color::Blue => "B",
-                Color::Green => "G",
-            }
-        )
-    }
-}
 
 impl Display for Color {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
@@ -370,6 +313,245 @@ fn checkerboard(rc: &mut RubiksCube, print_each_step: bool) {
             println!("{}", rc);
             std::io::stdin().read_line(&mut String::new()).unwrap();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn random_3x3x3_clockwise_scramble() {
+        let mut rc = crate::RubiksCube::new(3);
+
+        use crate::Color::*;
+        use crate::Face::*;
+
+        let moves = [
+            Down, Left, Up, Front, Left, Up, Down, Right, Down, Left, Front, Back, Left, Right,
+            Back, Up, Down, Front, Up, Down, Back, Left, Front, Left, Right, Left, Down, Left,
+            Front, Back,
+        ];
+
+        for m in moves {
+            crate::rotate_face(&mut rc, m, crate::Movement::Clockwise, 0);
+        }
+
+        let expected = crate::RubiksCube {
+            size: 3,
+            faces: [
+                vec![
+                    vec![Green, White, Red],
+                    vec![Yellow, Yellow, Red],
+                    vec![Blue, Red, Red],
+                ],
+                vec![
+                    vec![White, Blue, Orange],
+                    vec![Blue, Orange, Orange],
+                    vec![Green, Green, Orange],
+                ],
+                vec![
+                    vec![White, White, Yellow],
+                    vec![Yellow, Blue, Orange],
+                    vec![White, White, Orange],
+                ],
+                vec![
+                    vec![Blue, Yellow, Blue],
+                    vec![Blue, Red, Red],
+                    vec![Green, Yellow, Yellow],
+                ],
+                vec![
+                    vec![White, Green, Red],
+                    vec![Blue, Green, White],
+                    vec![Blue, Orange, Yellow],
+                ],
+                vec![
+                    vec![Green, Orange, Yellow],
+                    vec![Red, White, Green],
+                    vec![Red, Green, Orange],
+                ],
+            ],
+        };
+
+        assert_eq!(rc, expected);
+    }
+
+    #[test]
+    fn random_3x3x3_mixed_scramble() {
+        let mut rc = crate::RubiksCube::new(3);
+
+        use crate::Color::*;
+        use crate::Face::*;
+        use crate::Movement::*;
+
+        let moves = [
+            (Up, Half),
+            (Right, Half),
+            (Down, Half),
+            (Front, CounterClockwise),
+            (Down, Clockwise),
+            (Up, Half),
+            (Back, CounterClockwise),
+            (Left, Clockwise),
+            (Front, Clockwise),
+            (Up, Half),
+            (Front, Half),
+            (Down, Clockwise),
+            (Right, CounterClockwise),
+            (Down, Clockwise),
+            (Left, CounterClockwise),
+            (Back, Half),
+            (Front, Half),
+            (Back, CounterClockwise),
+            (Right, Clockwise),
+            (Down, CounterClockwise),
+            (Left, CounterClockwise),
+            (Front, Clockwise),
+            (Left, Clockwise),
+            (Down, Half),
+            (Up, CounterClockwise),
+            (Right, Half),
+            (Back, Clockwise),
+            (Front, CounterClockwise),
+            (Left, CounterClockwise),
+            (Up, Half),
+        ];
+
+        for (face, movement) in moves {
+            crate::rotate_face(&mut rc, face, movement, 0);
+        }
+
+        let expected = crate::RubiksCube {
+            size: 3,
+            faces: [
+                vec![
+                    vec![White, Red, Orange],
+                    vec![Orange, Yellow, Yellow],
+                    vec![Yellow, Red, Red],
+                ],
+                vec![
+                    vec![Orange, Yellow, Orange],
+                    vec![Orange, Orange, Yellow],
+                    vec![Yellow, Orange, Orange],
+                ],
+                vec![
+                    vec![Blue, Blue, Blue],
+                    vec![Red, Blue, Blue],
+                    vec![Green, Orange, Blue],
+                ],
+                vec![
+                    vec![White, Blue, Green],
+                    vec![White, Red, Yellow],
+                    vec![Yellow, White, Red],
+                ],
+                vec![
+                    vec![White, Green, Blue],
+                    vec![Green, Green, Green],
+                    vec![Green, White, Red],
+                ],
+                vec![
+                    vec![Yellow, White, Red],
+                    vec![Blue, White, Green],
+                    vec![Green, Red, White],
+                ],
+            ],
+        };
+
+        assert_eq!(rc, expected);
+    }
+
+    #[test]
+    fn random_5x5x5_mixed_scramble() {
+        let mut rc = crate::RubiksCube::new(5);
+
+        use crate::Color::*;
+        use crate::Face::*;
+        use crate::Movement::*;
+
+        let moves = [
+            (Front, Half, 1),
+            (Down, Half, 1),
+            (Right, Clockwise, 1),
+            (Up, CounterClockwise, 1),
+            (Left, CounterClockwise, 0),
+            (Down, Clockwise, 0),
+            (Front, Clockwise, 0),
+            (Right, CounterClockwise, 1),
+            (Down, Clockwise, 0),
+            (Back, CounterClockwise, 2),
+            (Right, Clockwise, 1),
+            (Up, Half, 2),
+            (Front, CounterClockwise, 0),
+            (Down, Half, 0),
+            (Up, CounterClockwise, 1),
+            (Down, Clockwise, 2),
+            (Left, Clockwise, 0),
+            (Up, Half, 0),
+            (Front, Half, 2),
+            (Right, Clockwise, 1),
+            (Front, Clockwise, 1),
+            (Left, CounterClockwise, 0),
+            (Up, CounterClockwise, 1),
+            (Front, Half, 2),
+            (Left, CounterClockwise, 1),
+            (Back, Clockwise, 1),
+            (Up, Clockwise, 0),
+            (Left, Half, 1),
+            (Right, Half, 1),
+            (Back, CounterClockwise, 0),
+        ];
+
+        for (face, movement, layer) in moves {
+            crate::rotate_face(&mut rc, face, movement, layer);
+        }
+
+        let expected = crate::RubiksCube {
+            size: 5,
+            faces: [
+                vec![
+                    vec![White, Orange, Red, Blue, White],
+                    vec![Orange, Blue, Orange, White, Yellow],
+                    vec![Yellow, Red, Orange, Orange, Orange],
+                    vec![White, Yellow, Orange, White, Green],
+                    vec![Green, White, Red, Blue, Yellow],
+                ],
+                vec![
+                    vec![Green, Yellow, Green, Green, Red],
+                    vec![Red, Red, Green, Yellow, White],
+                    vec![Red, White, Blue, Green, Orange],
+                    vec![Red, Blue, Green, Orange, Orange],
+                    vec![Green, Orange, Blue, Red, Blue],
+                ],
+                vec![
+                    vec![White, Blue, Yellow, Yellow, Orange],
+                    vec![Red, Green, Orange, White, Orange],
+                    vec![Green, Green, Yellow, Yellow, Orange],
+                    vec![White, Red, Red, Blue, Yellow],
+                    vec![Yellow, Red, Blue, Blue, Blue],
+                ],
+                vec![
+                    vec![Blue, Yellow, Yellow, Blue, Blue],
+                    vec![Blue, Green, White, Blue, Red],
+                    vec![White, Yellow, Green, White, Orange],
+                    vec![Green, White, Yellow, Orange, Green],
+                    vec![Red, Yellow, White, Orange, Green],
+                ],
+                vec![
+                    vec![Orange, White, Blue, White, Orange],
+                    vec![Blue, Yellow, Red, Orange, Yellow],
+                    vec![Blue, Blue, White, Blue, Green],
+                    vec![Red, Green, Blue, Yellow, White],
+                    vec![Red, White, White, Blue, Orange],
+                ],
+                vec![
+                    vec![Red, Green, White, Red, White],
+                    vec![Yellow, Green, Blue, Red, Orange],
+                    vec![Yellow, Red, Red, White, Red],
+                    vec![Green, Orange, Yellow, Red, Green],
+                    vec![Yellow, Orange, Green, Green, Yellow],
+                ],
+            ],
+        };
+
+        assert_eq!(rc, expected);
     }
 }
 
